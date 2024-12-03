@@ -1,0 +1,44 @@
+# Infraestructura para laboratorio de Base de datos No SQL
+# Elementos a desplegar:
+# 1. Firewalls:
+#    - nosqld-firewall-django
+# 2. Instancias MVs:
+#    - app-usuarios2 (repositorio clonado y requerimientos instalados)
+# La base de datos y reglas de firewall ya están creadas
+
+resources:
+
+# Application instance (app-usuarios2)
+- type: compute.v1.instance
+  name: app-usuarios2
+  properties:
+    zone: us-central1-a
+    machineType: https://www.googleapis.com/compute/v1/projects/arquisoft-2023-9878/zones/us-central1-a/machineTypes/e2-micro
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/ubuntu-2004-focal-v20240307b
+    networkInterfaces:
+    - network: https://www.googleapis.com/compute/v1/projects/arquisoft-2023-9878/global/networks/default
+      networkIP: 10.128.0.71  # IP de la instancia de la aplicación
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+    tags:
+      items: 
+      - nosqld-django  # Este tag es para la regla de firewall que permite acceso al servicio
+    metadata:
+      items:
+      - key: startup-script
+        value: |
+          #!/bin/bash
+          sudo apt-get update
+          sudo apt install -y python3-pip git
+          sudo mkdir /app
+          cd /app
+          sudo git clone https://github.com/MariaAmor8/usuarios.git
+          cd usuarios
+          sudo pip3 install -r requirements.txt
